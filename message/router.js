@@ -2,21 +2,31 @@ const express = require("express");
 const Message = require("./model");
 const Sse = require("json-sse");
 
-const stream = new Sse(); // is going to be a list that we are going to send to.
-
 const { Router } = express;
+
+const stream = new Sse();
 
 const router = Router();
 
 // get on the stream
-router.get("/stream", (request, response, next) => {
-  stream.updateInit('test'); // prepare this data, so when the next client connects, you send it over the streams and immidiately connect the client.
-  stream.init(request, response);
-});
-
-router.get("/message", async function(request, response) {
+router.get("/stream", async (request, response, next) => {
   try {
     const messages = await Message.findAll();
+    console.log("messages test:", messages);
+
+    const json = JSON.stringify(messages);
+
+    stream.updateInit(json);
+    stream.init(request, response);
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get("/message", async function(request, response, next) {
+  try {
+    const messages = await Message.findAll();
+
     response.send(messages);
   } catch (error) {
     next(error);
@@ -30,7 +40,9 @@ router.post("/message", async function(request, response, next) {
     const entity = { text };
     const message = await Message.create(entity);
 
-    console.log(response.dataValues);
+    const json = JSON.stringify(message);
+    stream.send(json);
+
     response.send(message);
   } catch (error) {
     next(error);
