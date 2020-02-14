@@ -13,6 +13,7 @@ router.post("/message", async function(request, response, next) {
     const message = await Message.create(entity);
 
     console.log(response.dataValues);
+    response.send(message);
   } catch (error) {
     next(error);
   }
